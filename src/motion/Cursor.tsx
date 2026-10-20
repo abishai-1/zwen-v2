@@ -7,12 +7,11 @@ import { pointer } from "./store";
 const TRAIL = 14;
 
 /**
- * immersive-g style cursor: an eased ring, a fast dot, a velocity-driven dot trail,
+ * Cursor effects on top of the native cursor: a velocity-driven dot trail,
  * contextual labels from [data-cursor] and magnetic pull on [data-magnetic].
  */
 export function Cursor() {
-  const ring = useRef<HTMLDivElement>(null);
-  const dot = useRef<HTMLDivElement>(null);
+  const tag = useRef<HTMLDivElement>(null);
   const trail = useRef<HTMLCanvasElement>(null);
   const [label, setLabel] = useState("");
   const enabled = useSyncExternalStore(
@@ -28,11 +27,9 @@ export function Cursor() {
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || !ring.current || !dot.current || !trail.current) return;
-    const ringX = gsap.quickTo(ring.current, "x", { duration: 0.55, ease: "power3" });
-    const ringY = gsap.quickTo(ring.current, "y", { duration: 0.55, ease: "power3" });
-    const dotX = gsap.quickTo(dot.current, "x", { duration: 0.08, ease: "power2" });
-    const dotY = gsap.quickTo(dot.current, "y", { duration: 0.08, ease: "power2" });
+    if (!enabled || !tag.current || !trail.current) return;
+    const tagX = gsap.quickTo(tag.current, "x", { duration: 0.35, ease: "power3" });
+    const tagY = gsap.quickTo(tag.current, "y", { duration: 0.35, ease: "power3" });
 
     const canvas = trail.current;
     const ctx = canvas.getContext("2d")!;
@@ -49,32 +46,19 @@ export function Cursor() {
     let visible = false;
 
     const onMove = (e: PointerEvent) => {
-      if (!visible) {
-        visible = true;
-        gsap.to([ring.current, dot.current], { autoAlpha: 1, duration: 0.3 });
-      }
-      ringX(e.clientX);
-      ringY(e.clientY);
-      dotX(e.clientX);
-      dotY(e.clientY);
+      visible = true;
+      tagX(e.clientX);
+      tagY(e.clientY);
     };
     const onLeave = () => {
       visible = false;
-      gsap.to([ring.current, dot.current], { autoAlpha: 0, duration: 0.3 });
+      setLabel("");
     };
 
-    // Contextual labels + hover state
+    // Contextual labels
     const onOver = (e: Event) => {
-      const t = (e.target as HTMLElement).closest<HTMLElement>("[data-cursor], a, button, input, textarea, select");
-      if (!t) {
-        setLabel("");
-        gsap.to(ring.current, { scale: 1, duration: 0.4, ease: "power3" });
-        return;
-      }
-      const text = t.dataset.cursor ?? "";
-      setLabel(text);
-      const isField = t.matches("input, textarea, select");
-      gsap.to(ring.current, { scale: isField ? 0.4 : text ? 2.6 : 1.8, duration: 0.45, ease: "power3" });
+      const t = (e.target as HTMLElement).closest<HTMLElement>("[data-cursor]");
+      setLabel(t?.dataset.cursor ?? "");
     };
 
     // Magnetic elements
@@ -151,13 +135,13 @@ export function Cursor() {
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[90] mix-blend-difference">
       <canvas ref={trail} className="absolute inset-0 h-full w-full" />
-      <div
-        ref={ring}
-        className="invisible absolute left-0 top-0 -ml-5 -mt-5 flex h-10 w-10 items-center justify-center rounded-full border border-white opacity-0"
-      >
-        <span className="font-mono text-[4px] uppercase tracking-[0.2em] text-white">{label}</span>
+      <div ref={tag} className="absolute left-0 top-0">
+        <span
+          className={`ml-5 mt-5 block font-mono text-[10px] uppercase tracking-[0.2em] text-white transition-opacity duration-300 ${label ? "opacity-100" : "opacity-0"}`}
+        >
+          {label}
+        </span>
       </div>
-      <div ref={dot} className="invisible absolute left-0 top-0 -ml-[3px] -mt-[3px] h-[6px] w-[6px] rounded-full bg-white opacity-0" />
     </div>
   );
 }
