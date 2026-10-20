@@ -1,9 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  cacheComponents: true,
-  partialPrefetching: true,
+  // cacheComponents is intentionally off: it keeps hidden pages mounted via
+  // <Activity>, which fights the GSAP/ScrollTrigger page-transition system.
   turbopack: {
     rules: {
       "*.css": {
@@ -11,6 +10,9 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
+  },
+  async redirects() {
+    return [{ source: "/archieve/:path*", destination: "/archive/:path*", permanent: true }];
   },
 };
 

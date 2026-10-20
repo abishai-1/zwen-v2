@@ -1,26 +1,189 @@
 @import "tailwindcss";
 
+/* ---------- Animatable colour tokens ---------- */
+@property --bg { syntax: "<color>"; inherits: true; initial-value: #050505; }
+@property --fg { syntax: "<color>"; inherits: true; initial-value: #e9e6df; }
+@property --accent { syntax: "<color>"; inherits: true; initial-value: #007070; }
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #050505;
+  --fg: #e9e6df;
+  --accent: #007070;
+  --red: #c1272d;
+  --teal: #007070;
+  --bone: #e9e6df;
+  --ink: #050505;
+  --gold: #b8975a;
+  --ease-out: cubic-bezier(0.2, 0.9, 0.2, 1);
+  transition: --bg 0.9s var(--ease-out), --fg 0.9s var(--ease-out), --accent 0.9s var(--ease-out);
 }
+
+html[data-style="ascii"] { --bg: #050505; --fg: #e9e6df; --accent: #007070; }
+html[data-style="cyber"] { --bg: #04060b; --fg: #e9e6df; --accent: #007070; }
+html[data-style="jp"] { --bg: #e6e1d6; --fg: #0c0b0a; --accent: #c1272d; }
+html[data-style="med"] { --bg: #0b0908; --fg: #e3dccb; --accent: #c1272d; }
+
+/* Font tokens resolve per element, so each section keeps its own voice. */
+:root, [data-style="ascii"] { --font-display: var(--nf-grotesk); --font-label: var(--nf-mono); }
+[data-style="cyber"] { --font-display: var(--nf-grotesk); --font-label: var(--nf-mono); }
+[data-style="jp"] { --font-display: var(--nf-jp); --font-label: var(--nf-mono); }
+[data-style="med"] { --font-display: var(--nf-cinzel); --font-label: var(--nf-cinzel); }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg: var(--bg);
+  --color-fg: var(--fg);
+  --color-accent: var(--accent);
+  --color-red: var(--red);
+  --color-teal: var(--teal);
+  --color-bone: var(--bone);
+  --color-ink: var(--ink);
+  --color-gold: var(--gold);
+  --font-sans: var(--nf-inter);
+  --font-mono: var(--nf-mono);
+  --font-jp: var(--nf-jp);
+  --font-fraktur: var(--nf-fraktur);
+  --font-cinzel: var(--nf-cinzel);
+  --font-grotesk: var(--nf-grotesk);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ---------- Base ---------- */
+html {
+  background: var(--bg);
+  color: var(--fg);
+  scrollbar-width: none;
 }
+html::-webkit-scrollbar { width: 0; height: 0; display: none; }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-stopped { overflow: hidden; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--nf-inter), system-ui, sans-serif;
+  overflow-x: clip;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--accent); color: var(--bone); }
+
+:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.font-display { font-family: var(--font-display); }
+.font-label { font-family: var(--font-label); }
+.label {
+  font-family: var(--font-label);
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+[data-style="med"] .label { letter-spacing: 0.22em; }
+.vertical { writing-mode: vertical-rl; text-orientation: mixed; }
+
+.muted { color: color-mix(in oklab, var(--fg) 58%, transparent); }
+.hairline { border-color: color-mix(in oklab, var(--fg) 18%, transparent); }
+.hairline-strong { border-color: color-mix(in oklab, var(--fg) 40%, transparent); }
+
+/* ---------- HUD panel with corner brackets ---------- */
+.hud {
+  position: relative;
+  border: 1px solid color-mix(in oklab, var(--fg) 14%, transparent);
+}
+.hud::before,
+.hud::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: var(--accent);
+  border-style: solid;
+  pointer-events: none;
+  transition: transform 0.5s var(--ease-out);
+}
+.hud::before { top: -1px; left: -1px; border-width: 1px 0 0 1px; }
+.hud::after { bottom: -1px; right: -1px; border-width: 0 1px 1px 0; }
+.hud:hover::before { transform: translate(-4px, -4px); }
+.hud:hover::after { transform: translate(4px, 4px); }
+
+/* ---------- Grain + scanlines (always moving) ---------- */
+.grain {
+  position: fixed;
+  inset: -100%;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  animation: grain 0.6s steps(6) infinite;
+}
+.scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    color-mix(in oklab, var(--fg) 4%, transparent) 2px 3px
+  );
+  animation: scan 8s linear infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes grain {
+  0% { transform: translate(0, 0); }
+  20% { transform: translate(-8%, 4%); }
+  40% { transform: translate(6%, -9%); }
+  60% { transform: translate(-3%, 7%); }
+  80% { transform: translate(9%, 3%); }
+  100% { transform: translate(-6%, -5%); }
+}
+@keyframes scan { to { background-position: 0 300px; } }
+
+/* ---------- Idle motion utilities ---------- */
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes blink { 50% { opacity: 0; } }
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  41% { opacity: 1; } 42% { opacity: 0.35; } 43% { opacity: 1; }
+  77% { opacity: 1; } 78% { opacity: 0.6; } 79% { opacity: 1; }
+}
+@keyframes pulse-ring { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(2.2); opacity: 0; } }
+.idle-float { animation: float 6s ease-in-out infinite; }
+.idle-spin { animation: spin 24s linear infinite; }
+.idle-spin-rev { animation: spin 36s linear infinite reverse; }
+.idle-blink { animation: blink 1s steps(1) infinite; }
+.idle-flicker { animation: flicker 5s linear infinite; }
+
+/* ---------- Ruler scrollbar odometer ---------- */
+.ruler-digits { height: 1em; line-height: 1; display: inline-flex; overflow: hidden; }
+.ruler-digit-col { display: flex; flex-direction: column; transition: transform 0.28s var(--ease-out); }
+.ruler-digit-col > span { height: 1em; display: block; }
+
+/* ---------- Form fields ---------- */
+.field {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--fg) 25%, transparent);
+  padding: 0.6rem 0;
+  font-family: var(--nf-mono);
+  color: var(--fg);
+  outline: none;
+  transition: border-color 0.3s;
+  cursor: text;
+}
+.field:focus { border-color: var(--accent); }
+.field::placeholder { color: color-mix(in oklab, var(--fg) 35%, transparent); }
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  .grain, .scanlines { display: none; }
 }
