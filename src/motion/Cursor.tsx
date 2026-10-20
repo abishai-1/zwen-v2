@@ -21,12 +21,6 @@ export function Cursor() {
   );
 
   useEffect(() => {
-    if (!enabled) return;
-    document.documentElement.classList.add("has-cursor");
-    return () => document.documentElement.classList.remove("has-cursor");
-  }, [enabled]);
-
-  useEffect(() => {
     if (!enabled || !tag.current || !trail.current) return;
     const tagX = gsap.quickTo(tag.current, "x", { duration: 0.35, ease: "power3" });
     const tagY = gsap.quickTo(tag.current, "y", { duration: 0.35, ease: "power3" });
